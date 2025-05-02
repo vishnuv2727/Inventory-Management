@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Inventory Management</h1>
+        <div class="form-container">
+            <input type="text" id="name" placeholder="Name">
+            <input type="number" id="quantity" placeholder="Quantity">
+            <select id="category">
+                <option value="" disabled selected>Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="food">Food</option>
+                <option value="clothes">Clothes</option>
+                <option value="stationary">Stationary</option>
+            </select>
+            <input type="number" id="price" placeholder="Price">
+            <button onclick="addItem()">Add Item</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-table"></tbody>
+        </table>
+        <div class="analytics">
+            <h2>Analytics Dashboard</h2>
+            <div id="analytics-content"></div>
+            <div class="analytics-box" id="total-inventory-value">
+                <h3>Total Inventory Value</h3>
+                <p id="total-value">$0.00</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        let inventory = [];
+        let editIndex = -1;
+
+        function addItem() {
+            const name = document.getElementById("name").value;
+            const quantity = parseInt(document.getElementById("quantity").value);
+            const category = document.getElementById("category").value;
+            const price = parseFloat(document.getElementById("price").value);
+            
+            if (name && quantity > 0 && category && price > 0) {
+                if (editIndex === -1) {
+                    const newItem = { id: Date.now(), name, quantity, category, price };
+                    inventory.push(newItem);
+                } else {
+                    inventory[editIndex] = { ...inventory[editIndex], name, quantity, category, price };
+                    editIndex = -1;
+                }
+                updateTable();
+                clearForm();
+            } else {
+                alert("Please fill out all fields and select a category.");
+            }
+        }
+
+        function clearForm() {
+            document.getElementById("name").value = "";
+            document.getElementById("quantity").value = "";
+            document.getElementById("category").value = "";
+            document.getElementById("price").value = "";
+        }
+
+        function removeItem(index) {
+            inventory.splice(index, 1);
+            updateTable();
+        }
+
+        function updateItem(index) {
+            const item = inventory[index];
+            document.getElementById("name").value = item.name;
+            document.getElementById("quantity").value = item.quantity;
+            document.getElementById("category").value = item.category;
+            document.getElementById("price").value = item.price;
+            editIndex = index;
+        }
+
+        function updateTable() {
+            const tableBody = document.getElementById("inventory-table");
+            tableBody.innerHTML = "";
+            let categoryTotals = {};
+            let totalValue = 0;
+            
+            inventory.forEach((item, index) => {
+                if (!categoryTotals[item.category]) {
+                    categoryTotals[item.category] = { totalValue: 0, totalCount: 0 };
+                }
+                categoryTotals[item.category].totalValue += item.quantity * item.price;
+                categoryTotals[item.category].totalCount += item.quantity;
+                totalValue += item.quantity * item.price;
+
+                const row = `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.category}</td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>
+                        <button onclick="removeItem(${index})">Remove</button>
+                        <button onclick="updateItem(${index})">Edit</button>
+                    </td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+            
+            document.getElementById("total-value").innerText = `$${totalValue.toFixed(2)}`;
+            updateAnalytics(categoryTotals);
+        }
+
+        function updateAnalytics(categoryTotals) {
+            const analyticsContent = document.getElementById("analytics-content");
+            analyticsContent.innerHTML = "";
+            
+            Object.keys(categoryTotals).forEach(category => {
+                const categoryData = categoryTotals[category];
+                const analyticsBox = `<div class='analytics-box'>
+                    <h3>${category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+                    <p>Total Value: $${categoryData.totalValue.toFixed(2)}</p>
+                    <p>Total Items: ${categoryData.totalCount}</p>
+                </div>`;
+                analyticsContent.innerHTML += analyticsBox;
+            });
+        }
+    </script>
+</body>
+</html>
